@@ -1,134 +1,63 @@
-<template>
-  <div id="app">
-    <h1>ToDo List App</h1>
-    <div class="input-container">
-      <input v-model="newItem" @keyup.enter="addItem" type="text" placeholder="Add New Item">
-      <button @click="addItem">Add</button>
-    </div>
-    <ul>
-      <li v-for="(item, index) in items" :key="index" :class="{ completed: item.completed }">
-        <input type="checkbox" v-model="item.completed">
-        <span>{{ item.text }}</span>
-        <div class="button-container">
-          <button @click="editItem(index)">Edit</button>
-          <button @click="removeItem(index)">Delete</button>
-        </div>
-      </li>
-    </ul>
-    <div v-if="editIndex !== null" class="edit-container">
-      <input v-model="editText" @keyup.enter="updateItem" type="text" placeholder="Edit Item">
-      <button @click="updateItem">Update</button>
-      <button @click="cancelEdit">Cancel</button>
-    </div>
-  </div>
-</template>
+<script setup>
+import { ref, computed } from 'vue'
 
-<script>
-export default {
-  name: 'App',
-  data() {
-    return {
-      newItem: '',
-      items: [],
-      editIndex: null,
-      editText: ''
-    };
-  },
-  methods: {
-    addItem() {
-      if (this.newItem.trim() !== '') {
-        this.items.push({ text: this.newItem, completed: false });
-        this.newItem = '';
-      }
-    },
-    removeItem(index) {
-      this.items.splice(index, 1);
-    },
-    editItem(index) {
-      this.editIndex = index;
-      this.editText = this.items[index].text;
-    },
-    updateItem() {
-      if (this.editIndex !== null && this.editText.trim() !== '') {
-        this.items[this.editIndex].text = this.editText;
-        this.cancelEdit();
-      }
-    },
-    cancelEdit() {
-      this.editIndex = null;
-      this.editText = '';
-    }
-  }
-};
+let id = 0
+
+const newTodo = ref('')
+const hideCompleted = ref(false)
+const todos = ref([
+    {id: id++, text: 'test', done: true, editing: false},
+    {id: id++, text: 'learn vue', done: true, editing: false},
+    {id: id++, text: 'test lagi', done: false, editing: false}
+])
+
+function tambah(){
+  todos.value.push({id: id++, text: newTodo.value, done: false, editing: false})
+  newTodo.value=''
+}
+
+function hapus(todo){
+  todos.value = todos.value.filter((t) => t !== todo)
+}
+
+function edit(todo){
+  todo.editing = true
+}
+
+function save(todo){
+  todo.editing = false
+}
+
+const filteredTodos = computed(() => {
+  return hideCompleted.value
+    ? todos.value.filter((t) => !t.done)
+    : todos.value
+})
 </script>
 
-<style scoped>
-#app {
-  max-width: 500px;
-  margin: 50px auto;
-  font-family: Arial, sans-serif;
-}
+<template>
+  <form @submit.prevent="tambah">
+    <input v-model="newTodo" placeholder="input here">
+    <button type="submit">Tambah</button>
+  </form>
 
-h1 {
-  text-align: center;
-}
+  <ol>
+    <li v-for="todo in filteredTodos" :key="todo.id">
+      <input type="checkbox" v-model="todo.done">
+      <span v-if="!todo.editing" :class="{done: todo.done}">{{ todo.text }}</span>
+      <input v-else v-model="todo.text" @keyup.enter="save(todo)" @blur="save(todo)">
+      <button v-if="!todo.editing" @click="edit(todo)">edit</button>
+      <button @click="hapus(todo)">hapus</button>
+    </li>
+  </ol>
 
-.input-container {
-  display: flex;
-  margin-bottom: 10px;
-}
+  <button @click="hideCompleted = !hideCompleted">
+    {{ hideCompleted ? 'Show all' : 'Hide completed' }}
+  </button>
+</template>
 
-input[type="text"] {
-  flex: 1;
-  padding: 8px;
-  font-size: 16px;
-}
-
-button {
-  padding: 8px 16px;
-  font-size: 16px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #45a049;
-}
-
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-li {
-  display: flex;
-  align-items: center;
-  margin-bottom: 5px;
-}
-
-.completed {
+<style>
+.done {
   text-decoration: line-through;
-  color: #888;
-}
-
-.button-container {
-  margin-left: auto;
-  display: flex;
-}
-
-.edit-container {
-  margin-top: 10px;
-  display: flex;
-  align-items: center;
-}
-
-.edit-container input[type="text"] {
-  flex: 1;
-}
-
-.edit-container button {
-  margin-left: 5px;
 }
 </style>
